@@ -185,31 +185,7 @@ class MyApp:
         tk.Label(window, text="", font=("System", 2)).pack()
         tk.Button(window, text="Submit", command=lambda: command_function(window, fields)).pack()
 
-    def add_item(self, window, fields):
-        try:
-            # Convert input data to the desired data types
-            part_name = str(window.children['part name_entry'].get()).strip()
-            part_no = str(window.children['part no_entry'].get()).strip()
-            model = str(window.children['model_entry'].get()).strip()
-            stock_location = int(window.children['stock location_entry'].get())
-            quantity = int(window.children['quantity_entry'].get())
-
-            # Check if all fields are filled
-            if all((part_name, part_no, stock_location, quantity)):
-                data = ["ADD", part_name, part_no, model, stock_location, quantity]
-                self.item_list = data
-                messagebox.showinfo("Success", "Item added successfully!")
-                window.destroy()
-                self.root.destroy()
-            else:
-                messagebox.showwarning("Error", "Please fill in all fields.")
-
-        except ValueError:
-            self.show_error_message("Invalid data type. Please enter valid data types for each field."
-                                    " Part Name, Part No, Model, must be 'Alphanumerical', Stock Location is a number between 1 to 100"
-                                    " and Quantity must be a numerical value")
-
-    def remove_item(self, window, fields):
+    def to_list(self, window, fields, Func):
         data = []
         error_occured = False
         for field in fields:
@@ -231,20 +207,19 @@ class MyApp:
                     error_occured = True
 
         if not error_occured and all(data):
-            data.insert(0, "REMOVE")
+            data.insert(0, Func)
             self.item_list = data
             window.destroy()
             self.root.destroy()
 
+    def add_item(self, window, fields):
+        self.to_list(window, fields, "ADD")
+
+    def remove_item(self, window, fields):
+        self.to_list(window, fields, "SEARCH")
+
     def search_item(self, window, fields):
-        data = [window.children[field.lower() + '_entry'].get() for field in fields]
-        if all(data):
-            data.insert(0, "SEARCH")
-            self.item_list = data
-            window.destroy()
-            self.root.destroy()
-        else:
-            messagebox.showwarning("Error", "Please fill in all fields.")
+        self.to_list(window, fields, "REMOVE")
 
     def bring_list(self):
         outlist = ["BRING"]
@@ -258,7 +233,7 @@ class MyApp:
             self.item_list = outlist
             self.root.destroy()
         else:
-            self.show_error_message("Please select a folder")
+            return ("Please select a folder")
 
     def get_list(self):
         if self.item_list:

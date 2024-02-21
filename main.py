@@ -15,7 +15,8 @@ if gui_input:
     action = gui_input[0]
 
     if action == "ADD":
-        inventory.add_method(*gui_input[1:])
+        message = inventory.add_method(*gui_input[1:])
+        app.show_message(message)
     elif action == "REMOVE":
         return_str = inventory.update_method(*gui_input[1:3])
         app.show_message(return_str) if return_str == "Updated" else app.show_error_message(return_str)
@@ -28,6 +29,8 @@ if gui_input:
     elif action == 'PRINT':
         message = inventory.print_list(gui_input[1])
         app.show_message(message)
+    else:
+        app.show_error_message(gui_input)
 
 
 
