@@ -28,11 +28,18 @@ class Inventory:
         selected_row = self.df.loc[self.df['Part_No'] == part_no]
         return selected_row
 
-    def add_method(self, part_name, part_no, model, stock_location, quantity):
-        selected_row = self.get_list(part_no)
+    def add_method(self, *args):
+
+        selected_row = self.get_list(args[1])
+
 
         if selected_row.empty:
-            input_list = [[part_name, model, part_no, stock_location, quantity, self.date_today]]
+
+            input_list = [arg for arg in args]
+
+
+            input_list.append(self.date_today)
+            input_list = [input_list]
 
             new_data = pd.DataFrame(input_list, columns=self.df.columns)
 
@@ -48,7 +55,7 @@ class Inventory:
             return "Added"
 
         else:
-            self.df.at[selected_row.index[0], 'Quantity'] += part_no
+            self.df.at[selected_row.index[0], 'Quantity'] += args[1]
 
             try:
                 self.df.to_excel(self.filename, index=False)
@@ -90,6 +97,18 @@ class Inventory:
 
     def bring_list(self):
         return self.df
+
+    def bulk_entry(self, filename_new):
+        new_data = pd.read_excel(filename_new)
+        updated_df = pd.concat([self.df, new_data], ignore_index=True)
+
+        self.df = updated_df
+        try:
+            self.df.to_excel(self.filename, index=False)
+        except PermissionError:
+            return "Please close the excel file that is opened"
+
+        return "Added"
 
     def print_list(self, pdf_file_location="."):
         max_rows_per_page = 50  # This is an example, adjust the number as needed
@@ -169,6 +188,9 @@ class MyApp:
         tk.Button(self.root, text="Print Inventory", command=self.print_list, padx=45, pady=2, font=("System", 8), width=6).pack()
         tk.Label(self.root, text="", font=("System", 2)).pack()
 
+        tk.Button(self.root, text="Bulk Input", command=self.file_name_bulk, padx=45, pady=2, font=("System", 8), width=6).pack()
+        tk.Label(self.root, text="", font=("System", 2)).pack()
+
     def open_window(self, title, fields, command_function):
         generic_window = tk.Toplevel(self.root)
         generic_window.title(title)
@@ -195,7 +217,7 @@ class MyApp:
                     field_input = str(window.children[field.lower() + '_entry'].get())
                     data.append(field_input)
                 except ValueError:
-                    self.show_error_message("Invalid data type. Please enter valid data types for each field.")
+                    self.show_message("Invalid data type. Please enter valid data types for each field.", "Error")
                     error_occured = True
 
             else:
@@ -203,7 +225,7 @@ class MyApp:
                     field_input = int(window.children[field.lower() + '_entry'].get())
                     data.append(field_input)
                 except ValueError:
-                    self.show_error_message("Invalid data type. Please enter valid data types for each field.")
+                    self.show_message("Invalid data type. Please enter valid data types for each field.", "Error")
                     error_occured = True
 
         if not error_occured and all(data):
@@ -235,16 +257,18 @@ class MyApp:
         else:
             return ("Please select a folder")
 
+    def file_name_bulk(self):
+        file_selected = filedialog.askopenfilename()
+        self.item_list = ["BULK", file_selected]
+        self.root.destroy()
+
     def get_list(self):
         if self.item_list:
             return self.item_list
 
-    def show_error_message(self, error_message):
-        messagebox.showerror("Error", error_message)
-
-    def show_message(self,message):
+    def show_message(self,message, message_type):
         # Display the message box
-        messagebox.showinfo("Message", message)
+        messagebox.showinfo(message_type, message)
 
     def display_excel_data(self,df,height):
         # Create a new Tkinter window
