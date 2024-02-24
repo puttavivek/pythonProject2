@@ -8,30 +8,47 @@ from tkinter import filedialog
 from tkinter import ttk
 from math import ceil
 
-"""
-This class is used for adding, updating, removing, displaying, and printing 
-the inventory data that is stored in the excel.
-"""
-
 
 class Inventory:
-
-       # Excel file which is used for doing all these functions
-
+    """
+        Class for managing inventory data, including operations like adding, updating, searching, and printing.
+    """
     def __init__(self, filename = "inventory.xlsx"):
+        """
+                Initializes the Inventory class with the provided or default Excel file.
+
+                Parameters:
+                - filename (str): The name of the Excel file containing inventory data.
+        """
         self.filename = filename
         self.date_now = datetime.datetime.now()
         self.date_today = self.date_now.strftime("%d-%m-%Y %H:%M")
         self.df = pd.read_excel(self.filename)
 
     def get_list(self, part_no):
+        """
+                Retrieves a list of inventory items based on the provided part number.
+
+                Parameters:
+                - part_no (str): The part number to search for.
+
+                Returns:
+                - pandas.DataFrame: DataFrame containing the selected rows.
+        """
         selected_row = self.df.loc[self.df['Part_No'] == part_no]
         return selected_row
 
     def add_method(self, *args):
+        """
+                Adds new inventory data or updates existing data based on the provided arguments.
 
+                Parameters:
+                - args: Variable arguments containing inventory data.
+
+                Returns:
+                - str: Confirmation message indicating whether the operation was successful.
+        """
         selected_row = self.get_list(args[1])
-
 
         if selected_row.empty:
 
@@ -65,6 +82,16 @@ class Inventory:
             return "Updated"
 
     def update_method(self, part_no, quantity):
+        """
+                Updates the quantity of an item in the inventory based on the provided part number.
+
+                Parameters:
+                - part_no (str): The part number of the item to update.
+                - quantity (int): The quantity to subtract from the available quantity.
+
+                Returns:
+                - str: Confirmation message indicating whether the operation was successful or an error occurred.
+        """
         part_no = part_no.strip()
         selected_row = self.get_list(part_no)
 
@@ -86,6 +113,15 @@ class Inventory:
                 return error
 
     def search_method(self, part_no):
+        """
+                Searches for an item in the inventory based on the provided part number.
+
+                Parameters:
+                - part_no (str): The part number to search for.
+
+                Returns:
+                - pandas.DataFrame: DataFrame containing the selected rows or an error message.
+        """
         part_no = part_no.strip()
         selected_row = self.get_list(part_no)
 
@@ -96,9 +132,24 @@ class Inventory:
             return selected_row
 
     def bring_list(self):
+        """
+                Retrieves the entire inventory list.
+
+                Returns:
+                - pandas.DataFrame: DataFrame containing the entire inventory.
+        """
         return self.df
 
     def bulk_entry(self, filename_new):
+        """
+               Adds bulk inventory data from a file to the existing inventory.
+
+               Parameters:
+               - filename_new (str): The name of the file containing bulk inventory data.
+
+               Returns:
+               - str: Confirmation message indicating whether the operation was successful.
+        """
         new_data = pd.read_excel(filename_new)
         updated_df = pd.concat([self.df, new_data], ignore_index=True)
 
@@ -111,7 +162,17 @@ class Inventory:
         return "Added"
 
     def print_list(self, pdf_file_location="."):
-        max_rows_per_page = 50  # This is an example, adjust the number as needed
+        """
+                Prints the inventory data to a PDF file.
+
+                Parameters:
+                - pdf_file_location (str): The location to save the PDF file.
+
+                Returns:
+                - str: Confirmation message indicating the location and name of the printed PDF file.
+                """
+
+        max_rows_per_page = 50
         num_pages = len(self.df) / max_rows_per_page
         num_pages = ceil(num_pages)
 
@@ -126,8 +187,9 @@ class Inventory:
                 ax.axis('off')  # Turn off axis labels and ticks
 
                 if page == 0:
+                    # Add title to the first page
                     fig.text(0.5, 0.97, 'Inventory List', fontsize=16, fontweight='bold', ha='center', va='top')
-                    # Adjust the spacing to reduce the gap between title and table
+                    # Adjusting the spacing to reduce the gap between title and table
                     fig.subplots_adjust(top=0.99)
 
                 # Calculate the rows to display on this page
@@ -138,7 +200,7 @@ class Inventory:
                 # Create the table and add it to the axes
                 table = ax.table(cellText=df_chunk.values, colLabels=self.df.columns, cellLoc='center', loc='center', colWidths=relative_column_widths)
                 table.auto_set_font_size(False)
-                table.set_fontsize(6)  # Adjust font size as needed
+                table.set_fontsize(6)
 
                 table.scale(1, 1.2)
                 ax.set_position([0, 0, 1, 0.9])
@@ -151,26 +213,35 @@ class Inventory:
 
 
 class MyApp:
+    """
+        Main application class for Inventory Management.
+    """
+
+
     def __init__(self, root):
+        """
+                Initialize the application.
+
+                Parameters:
+                - root: Tkinter root window
+        """
         self.root = root
         self.root.title("Inventory Management")
         self.root.geometry("400x350")
         self.root.iconbitmap('Icon.ico')
-
-
         # List to store items
         self.item_list = []
-
         # set minimum window size value
         root.minsize(400, 350)
-
         # set maximum window size value
         root.maxsize(400, 350)
-
         # Create and set up the GUI components
         self.create_widgets()
 
     def create_widgets(self):
+        """
+                Create GUI components.
+        """
         tk.Label(self.root, text="", font=("System", 2)).pack()
         # Add Button
         tk.Button(self.root, text="Add Inventory", command=lambda: self.open_window("Add Item", ['Part Name', 'Part No', 'Model', 'Stock Location', 'Quantity'], self.add_item), padx=45, pady=2, font=("System", 8), width=6).pack()
@@ -192,6 +263,14 @@ class MyApp:
         tk.Label(self.root, text="", font=("System", 2)).pack()
 
     def open_window(self, title, fields, command_function):
+        """
+                Open a new window for user input.
+
+                Parameters:
+                - title: Title of the window
+                - fields: List of input fields
+                - command_function: Function to execute on submission
+        """
         generic_window = tk.Toplevel(self.root)
         generic_window.title(title)
         generic_window.geometry("400x350")
@@ -199,6 +278,14 @@ class MyApp:
         self.setup_input_fields(generic_window, fields, command_function)
 
     def setup_input_fields(self, window, fields, command_function):
+        """
+                Set up input fields in the window.
+
+                Parameters:
+                - window: Tkinter window
+                - fields: List of input fields
+                - command_function: Function to execute on submission
+        """
         for field in fields:
             tk.Label(window, text=f"{field}:").pack()
             entry_var = tk.StringVar()
@@ -208,6 +295,14 @@ class MyApp:
         tk.Button(window, text="Submit", command=lambda: command_function(window, fields)).pack()
 
     def to_list(self, window, fields, Func):
+        """
+                Convert input fields to a list.
+
+                Parameters:
+                - window: Tkinter window
+                - fields: List of input fields
+                - func: Function identifier
+        """
         data = []
         error_occured = False
         for field in fields:
@@ -235,20 +330,47 @@ class MyApp:
             self.root.destroy()
 
     def add_item(self, window, fields):
+        """
+                Add item to the list.
+
+                Parameters:
+                - window: Tkinter window
+                - fields: List of input fields
+        """
         self.to_list(window, fields, "ADD")
 
     def remove_item(self, window, fields):
+        """
+                Remove item from the list.
+
+                Parameters:
+                - window: Tkinter window
+                - fields: List of input fields
+        """
         self.to_list(window, fields, "SEARCH")
 
     def search_item(self, window, fields):
+        """
+                Search for an item in the list.
+
+                Parameters:
+                - window: Tkinter window
+                - fields: List of input fields
+        """
         self.to_list(window, fields, "REMOVE")
 
     def bring_list(self):
+        """
+                Display the list of items in the inventory.
+        """
         outlist = ["BRING"]
         self.item_list = outlist
         self.root.destroy()
 
     def print_list(self):
+        """
+                Print the list of items.
+        """
         folder_selected = filedialog.askdirectory()
         if folder_selected:
             outlist = ["PRINT",folder_selected]
@@ -258,19 +380,41 @@ class MyApp:
             return ("Please select a folder")
 
     def file_name_bulk(self):
+        """
+                Get the file name for bulk input.
+        """
         file_selected = filedialog.askopenfilename()
         self.item_list = ["BULK", file_selected]
         self.root.destroy()
 
     def get_list(self):
+        """
+                Get the current list of items.
+
+                Returns:
+                - List: Current list of items
+        """
         if self.item_list:
             return self.item_list
 
     def show_message(self,message, message_type):
-        # Display the message box
+        """
+                Display a message box.
+
+                Parameters:
+                - message: Message to display
+                - message_type: Type of the message (Success, Error, etc.)
+        """
         messagebox.showinfo(message_type, message)
 
     def display_excel_data(self,df,height):
+        """
+                Display Excel data in a new window.
+
+                Parameters:
+                - df: DataFrame containing data to display
+                - height: Height of the Treeview widget
+        """
         # Create a new Tkinter window
         window = tk.Tk()
         window.title("Data Display")
