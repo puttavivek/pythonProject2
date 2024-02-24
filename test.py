@@ -1,4 +1,5 @@
+import pandas as pd
 
-text = "part_no"
-text = text.capitalize()
-print(text)
+df = pd.read_excel("inventory.xlsx")
+
+print(df.dtypes)

@@ -7,13 +7,15 @@ from tkinter import messagebox
 from tkinter import filedialog
 from tkinter import ttk
 from math import ceil
+import os as os
 
 
 class Inventory:
     """
         Class for managing inventory data, including operations like adding, updating, searching, and printing.
     """
-    def __init__(self, filename = "inventory.xlsx"):
+
+    def __init__(self, filename="inventory.xlsx"):
         """
                 Initializes the Inventory class with the provided or default Excel file.
 
@@ -23,7 +25,12 @@ class Inventory:
         self.filename = filename
         self.date_now = datetime.datetime.now()
         self.date_today = self.date_now.strftime("%d-%m-%Y %H:%M")
-        self.df = pd.read_excel(self.filename)
+        try:
+            self.df = pd.read_excel(self.filename)
+        except FileNotFoundError:
+            return "Error: The specified Excel file does not exist."
+        except PermissionError:
+            return "Error: Permission issue. Please check if the file is open."
 
     def get_list(self, part_no):
         """
@@ -35,6 +42,7 @@ class Inventory:
                 Returns:
                 - pandas.DataFrame: DataFrame containing the selected rows.
         """
+        # Retrieve rows from the DataFrame where the 'Part_No' column matches the provided part number
         selected_row = self.df.loc[self.df['Part_No'] == part_no]
         return selected_row
 
@@ -48,15 +56,13 @@ class Inventory:
                 Returns:
                 - str: Confirmation message indicating whether the operation was successful.
         """
+        # check if part_no is already present
         selected_row = self.get_list(args[1])
 
         if selected_row.empty:
 
-            input_list = [arg for arg in args]
-
-
-            input_list.append(self.date_today)
-            input_list = [input_list]
+            # Create a list, input_list, containing the elements from args and the current date
+            input_list = [[arg for arg in args] + [self.date_today]]
 
             new_data = pd.DataFrame(input_list, columns=self.df.columns)
 
@@ -67,19 +73,20 @@ class Inventory:
             try:
                 self.df.to_excel(self.filename, index=False)
             except PermissionError:
-                return "Please close the excel file that is opened"
+                return f"Failed to add data. Please close the Excel file that is currently open."
 
-            return "Added"
+            return f"Data added successfully."
 
+        # if part is present update the quantity
         else:
             self.df.at[selected_row.index[0], 'Quantity'] += args[1]
 
             try:
                 self.df.to_excel(self.filename, index=False)
             except PermissionError:
-                return "Please close the excel file that is opened"
+                return f"Failed to update data. Please close the Excel file that is currently open."
 
-            return "Updated"
+            return f"Data updated successfully."
 
     def update_method(self, part_no, quantity):
         """
@@ -106,10 +113,10 @@ class Inventory:
                 try:
                     self.df.to_excel(self.filename, index=False)
                 except PermissionError:
-                    return "Please close the excel file that is opened"
-                return "updated"
+                    return f"Failed to update quantity. Please close the Excel file that is currently open."
+                return f"Quantity updated successfully."
             else:
-                error = f"Quantity is more than available, Available Quantity is - {row['Quantity']}"
+                error = f"Failed to update quantity. Quantity is more than available. Available Quantity is {row['Quantity']}."
                 return error
 
     def search_method(self, part_no):
@@ -123,13 +130,13 @@ class Inventory:
                 - pandas.DataFrame: DataFrame containing the selected rows or an error message.
         """
         part_no = part_no.strip()
-        selected_row = self.get_list(part_no)
+        selected_row_search = self.get_list(part_no)
 
-        if selected_row.empty:
+        if selected_row_search.empty:
             error = f"No rows found for Part_No = {part_no}"
             return error
         else:
-            return selected_row
+            return selected_row_search
 
     def bring_list(self):
         """
@@ -150,16 +157,28 @@ class Inventory:
                Returns:
                - str: Confirmation message indicating whether the operation was successful.
         """
-        new_data = pd.read_excel(filename_new)
+        try:
+            new_data = pd.read_excel(filename_new)
+        except FileNotFoundError:
+            return "Error: The specified Excel file does not exist."
+        except PermissionError:
+            return "Error: Permission issue. Please check if the file is open."
+
+        # Check if data types in the columns of excel match the existing file.
+        columns_to_check = self.df.columns[:-1]  # Exclude the date time column
+        if not new_data[columns_to_check].dtypes.equals(self.df[columns_to_check].dtypes):
+            return "Error: Data types in the bulk entry file do not match the existing inventory."
+
+        new_data[self.df.columns[-1]] = self.date_today
         updated_df = pd.concat([self.df, new_data], ignore_index=True)
 
         self.df = updated_df
         try:
             self.df.to_excel(self.filename, index=False)
         except PermissionError:
-            return "Please close the excel file that is opened"
+            return f"Failed to add bulk data. Please close the Excel file that is currently open."
 
-        return "Added"
+        return f"Data added successfully."
 
     def print_list(self, pdf_file_location="."):
         """
@@ -170,45 +189,54 @@ class Inventory:
 
                 Returns:
                 - str: Confirmation message indicating the location and name of the printed PDF file.
-                """
+        """
 
+        # Set the maximum number of rows per page for the PDF
         max_rows_per_page = 50
-        num_pages = len(self.df) / max_rows_per_page
-        num_pages = ceil(num_pages)
+        # Calculate the number of pages needed
+        num_pages = ceil(len(self.df) / max_rows_per_page)
 
+        # Define column widths for table layout
         relative_column_widths = [0.3, 0.15, 0.1, 0.075, 0.075, 0.3]
 
+        # Generate the PDF file name with timestamp
         pdf_file_name = f"inventory-{self.date_now.strftime('%d-%m-%Y-%H-%M')}.pdf"
-        pdf_file_path = f"{pdf_file_location}/{pdf_file_name}"
+        pdf_file_path = os.path.join(pdf_file_location, pdf_file_name)
 
-        with PdfPages(pdf_file_path) as pdf:
-            for page in range(num_pages):
-                fig, ax = plt.subplots(figsize=(8.27, 11.69))
-                ax.axis('off')  # Turn off axis labels and ticks
+        try:
+            # Create a PdfPages object to manage the PDF file
+            with PdfPages(pdf_file_path) as pdf:
+                for page in range(num_pages):
+                    fig, ax = plt.subplots(figsize=(8.27, 11.69))
+                    ax.axis('off')  # Turn off axis labels and ticks
 
-                if page == 0:
-                    # Add title to the first page
-                    fig.text(0.5, 0.97, 'Inventory List', fontsize=16, fontweight='bold', ha='center', va='top')
-                    # Adjusting the spacing to reduce the gap between title and table
-                    fig.subplots_adjust(top=0.99)
+                    if page == 0:
+                        # Add title to the first page
+                        fig.text(0.5, 0.97, 'Inventory List', fontsize=16, fontweight='bold', ha='center', va='top')
+                        # Adjusting the spacing to reduce the gap between title and table
+                        fig.subplots_adjust(top=0.99)
 
-                # Calculate the rows to display on this page
-                start_row = page * max_rows_per_page
-                end_row = min(start_row + max_rows_per_page, len(self.df))
-                df_chunk = self.df.iloc[start_row:end_row]
+                    # Calculate the rows to display on this page
+                    start_row = page * max_rows_per_page
+                    end_row = min(start_row + max_rows_per_page, len(self.df))
+                    df_chunk = self.df.iloc[start_row:end_row]
 
-                # Create the table and add it to the axes
-                table = ax.table(cellText=df_chunk.values, colLabels=self.df.columns, cellLoc='center', loc='center', colWidths=relative_column_widths)
-                table.auto_set_font_size(False)
-                table.set_fontsize(6)
+                    # Create the table and add it to the axes
+                    table = ax.table(cellText=df_chunk.values, colLabels=self.df.columns, cellLoc='center',
+                                     loc='center', colWidths=relative_column_widths)
+                    table.auto_set_font_size(False)
+                    table.set_fontsize(6)
 
-                table.scale(1, 1.2)
-                ax.set_position([0, 0, 1, 0.9])
+                    table.scale(1, 1.2)
+                    ax.set_position([0, 0, 1, 0.9])
 
-                pdf.savefig(fig, bbox_inches='tight')
-                plt.close()
+                    pdf.savefig(fig, bbox_inches='tight')
+                    plt.close()
 
-        message = f"List Printed in the selected location with name - {pdf_file_name}"
+            message = f"Inventory list printed successfully. File location: {pdf_file_location}, File name: {pdf_file_name}"
+
+        except PermissionError:
+            return "Error: Permission issue. Please check if the PDF file location is accessible."
         return message
 
 
@@ -216,7 +244,6 @@ class MyApp:
     """
         Main application class for Inventory Management.
     """
-
 
     def __init__(self, root):
         """
@@ -242,24 +269,35 @@ class MyApp:
         """
                 Create GUI components.
         """
-        tk.Label(self.root, text="", font=("System", 2)).pack()
+        tk.Label(self.root, text="", font=("System", 2)).pack() # To add space before and after Buttons
         # Add Button
-        tk.Button(self.root, text="Add Inventory", command=lambda: self.open_window("Add Item", ['Part Name', 'Part No', 'Model', 'Stock Location', 'Quantity'], self.add_item), padx=45, pady=2, font=("System", 8), width=6).pack()
+        tk.Button(self.root, text="Add Inventory", command=lambda: self.open_window("Add Item",
+                                                                                    ['Part Name', 'Part No', 'Model',
+                                                                                     'Stock Location', 'Quantity'],
+                                                                                    self.add_item), padx=45, pady=2,
+                  font=("System", 8), width=6).pack()
         tk.Label(self.root, text="", font=("System", 2)).pack()
         # Remove Button
-        tk.Button(self.root, text="Edit Inventory", command=lambda: self.open_window("Remove Item", ['Part No', 'Quantity'], self.remove_item), padx=45, pady=2, font=("System", 8), width=6).pack()
+        tk.Button(self.root, text="Edit Inventory",
+                  command=lambda: self.open_window("Remove Item", ['Part No', 'Quantity'], self.remove_item), padx=45,
+                  pady=2, font=("System", 8), width=6).pack()
         tk.Label(self.root, text="", font=("System", 2)).pack()
         # Bring List Button
-        tk.Button(self.root, text="Search Inventory", command=lambda: self.open_window("Bring List", ['Part No'], self.search_item ), padx=45, pady=2, font=("System", 8), width=6).pack()
+        tk.Button(self.root, text="Search Inventory",
+                  command=lambda: self.open_window("Bring List", ['Part No'], self.search_item), padx=45, pady=2,
+                  font=("System", 8), width=6).pack()
         tk.Label(self.root, text="", font=("System", 2)).pack()
         # Bring List Button
-        tk.Button(self.root, text="View Inventory", command=self.bring_list, padx=45, pady=2, font=("System", 8), width=6).pack()
+        tk.Button(self.root, text="View Inventory", command=self.bring_list, padx=45, pady=2, font=("System", 8),
+                  width=6).pack()
         tk.Label(self.root, text="", font=("System", 2)).pack()
         # Print List Button
-        tk.Button(self.root, text="Print Inventory", command=self.print_list, padx=45, pady=2, font=("System", 8), width=6).pack()
+        tk.Button(self.root, text="Print Inventory", command=self.print_list, padx=45, pady=2, font=("System", 8),
+                  width=6).pack()
         tk.Label(self.root, text="", font=("System", 2)).pack()
-
-        tk.Button(self.root, text="Bulk Input", command=self.file_name_bulk, padx=45, pady=2, font=("System", 8), width=6).pack()
+        # Bulk Input Button
+        tk.Button(self.root, text="Bulk Input", command=self.file_name_bulk, padx=45, pady=2, font=("System", 8),
+                  width=6).pack()
         tk.Label(self.root, text="", font=("System", 2)).pack()
 
     def open_window(self, title, fields, command_function):
@@ -294,7 +332,7 @@ class MyApp:
         tk.Label(window, text="", font=("System", 2)).pack()
         tk.Button(window, text="Submit", command=lambda: command_function(window, fields)).pack()
 
-    def to_list(self, window, fields, Func):
+    def to_list(self, window, fields, func):
         """
                 Convert input fields to a list.
 
@@ -304,7 +342,7 @@ class MyApp:
                 - func: Function identifier
         """
         data = []
-        error_occured = False
+        error_occurred = False
         for field in fields:
 
             if field.lower() == 'part name' or field.lower() == 'part no' or field.lower() == 'model':
@@ -312,19 +350,19 @@ class MyApp:
                     field_input = str(window.children[field.lower() + '_entry'].get())
                     data.append(field_input)
                 except ValueError:
-                    self.show_message("Invalid data type. Please enter valid data types for each field.", "Error")
-                    error_occured = True
+                    self.show_message(f"Invalid data type. Please enter valid data types for each field.", "Error")
+                    error_occurred = True
 
             else:
                 try:
                     field_input = int(window.children[field.lower() + '_entry'].get())
                     data.append(field_input)
                 except ValueError:
-                    self.show_message("Invalid data type. Please enter valid data types for each field.", "Error")
-                    error_occured = True
+                    self.show_message(f"Invalid data type. Please enter valid data types for each field.", "Error")
+                    error_occurred = True
 
-        if not error_occured and all(data):
-            data.insert(0, Func)
+        if not error_occurred and all(data):
+            data.insert(0, func)
             self.item_list = data
             window.destroy()
             self.root.destroy()
@@ -347,7 +385,7 @@ class MyApp:
                 - window: Tkinter window
                 - fields: List of input fields
         """
-        self.to_list(window, fields, "SEARCH")
+        self.to_list(window, fields, "REMOVE")
 
     def search_item(self, window, fields):
         """
@@ -357,7 +395,7 @@ class MyApp:
                 - window: Tkinter window
                 - fields: List of input fields
         """
-        self.to_list(window, fields, "REMOVE")
+        self.to_list(window, fields, "SEARCH")
 
     def bring_list(self):
         """
@@ -373,11 +411,11 @@ class MyApp:
         """
         folder_selected = filedialog.askdirectory()
         if folder_selected:
-            outlist = ["PRINT",folder_selected]
+            outlist = ["PRINT", folder_selected]
             self.item_list = outlist
             self.root.destroy()
         else:
-            return ("Please select a folder")
+            return f"Please select a folder"
 
     def file_name_bulk(self):
         """
@@ -397,7 +435,8 @@ class MyApp:
         if self.item_list:
             return self.item_list
 
-    def show_message(self,message, message_type):
+    @staticmethod
+    def show_message(message, message_type):
         """
                 Display a message box.
 
@@ -405,9 +444,9 @@ class MyApp:
                 - message: Message to display
                 - message_type: Type of the message (Success, Error, etc.)
         """
-        messagebox.showinfo(message_type, message)
+        messagebox.showinfo(message, message_type)
 
-    def display_excel_data(self,df,height):
+    def display_excel_data(self, df, height):
         """
                 Display Excel data in a new window.
 
@@ -426,7 +465,7 @@ class MyApp:
         window.maxsize(1000, 2000)
 
         # Create a treeview widget for tabular display
-        tree = ttk.Treeview(window, columns=list(df.columns), show="headings",  height=height)
+        tree = ttk.Treeview(window, columns=list(df.columns), show="headings", height=height)
         tree.pack(padx=10, pady=10)
 
         # Insert column headers

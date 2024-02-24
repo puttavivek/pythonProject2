@@ -24,7 +24,7 @@ if gui_input:
     if action == "ADD":
         # Add item to the inventory
         message = inventory.add_method(*gui_input[1:])
-        app.show_message("Message", message) # Display a success message
+        app.show_message("Message", message)  # Display a success message
     elif action == "REMOVE":
         return_str = inventory.update_method(*gui_input[1:3])
         app.show_message("Message", return_str) if return_str == "Updated" else app.show_message("Error", return_str)
@@ -41,16 +41,4 @@ if gui_input:
         message = inventory.bulk_entry(gui_input[1])
         app.show_message("Message", message)
     else:
-        app.show_message("Unkown Error Occured", "Message")
-
-
-
-
-
-
-
-
-
-
-
-
+        app.show_message("Unknown Error Occurred", "Message")
