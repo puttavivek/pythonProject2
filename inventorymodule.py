@@ -73,20 +73,20 @@ class Inventory:
             try:
                 self.df.to_excel(self.filename, index=False)
             except PermissionError:
-                return f"Failed to add data. Please close the Excel file that is currently open."
+                return ["Error", f"Failed to add data. Please close the Excel file that is currently open."]
 
-            return f"Data added successfully."
+            return ["Message", f"Data added successfully."]
 
         # if part is present update the quantity
         else:
-            self.df.at[selected_row.index[0], 'Quantity'] += args[1]
+            self.df.at[selected_row.index[0], 'Quantity'] += args[4]
 
             try:
                 self.df.to_excel(self.filename, index=False)
             except PermissionError:
-                return f"Failed to update data. Please close the Excel file that is currently open."
+                return ["Error", f"Failed to update data. Please close the Excel file that is currently open."]
 
-            return f"Data updated successfully."
+            return["Message", "Data updated successfully."]
 
     def update_method(self, part_no, quantity):
         """
@@ -103,7 +103,7 @@ class Inventory:
         selected_row = self.get_list(part_no)
 
         if selected_row.empty:
-            error = f"No rows found for Part_No = {part_no}"
+            error = ["Error", f"No rows found for Part_No = {part_no}"]
             return error
 
         for index, row in selected_row.iterrows():
@@ -113,10 +113,10 @@ class Inventory:
                 try:
                     self.df.to_excel(self.filename, index=False)
                 except PermissionError:
-                    return f"Failed to update quantity. Please close the Excel file that is currently open."
-                return f"Quantity updated successfully."
+                    return ["Error", f"Failed to update quantity. Please close the Excel file that is currently open."]
+                return ["Message", f"Quantity updated successfully."]
             else:
-                error = f"Failed to update quantity. Quantity is more than available. Available Quantity is {row['Quantity']}."
+                error = ["Error", f"Failed to update quantity. Quantity is more than available. Available Quantity is {row['Quantity']}."]
                 return error
 
     def search_method(self, part_no):
@@ -133,7 +133,7 @@ class Inventory:
         selected_row_search = self.get_list(part_no)
 
         if selected_row_search.empty:
-            error = f"No rows found for Part_No = {part_no}"
+            error = ["Error", f"No rows found for Part_No = {part_no}"]
             return error
         else:
             return selected_row_search
@@ -160,14 +160,14 @@ class Inventory:
         try:
             new_data = pd.read_excel(filename_new)
         except FileNotFoundError:
-            return "Error: The specified Excel file does not exist."
+            return ["Error", "Error: The specified Excel file does not exist."]
         except PermissionError:
-            return "Error: Permission issue. Please check if the file is open."
+            return ["Error", "Error: Permission issue. Please check if the file is open."]
 
         # Check if data types in the columns of excel match the existing file.
         columns_to_check = self.df.columns[:-1]  # Exclude the date time column
         if not new_data[columns_to_check].dtypes.equals(self.df[columns_to_check].dtypes):
-            return "Error: Data types in the bulk entry file do not match the existing inventory."
+            return ["Error", "Error: Data types in the bulk entry file do not match the existing inventory."]
 
         new_data[self.df.columns[-1]] = self.date_today
         updated_df = pd.concat([self.df, new_data], ignore_index=True)
@@ -176,9 +176,9 @@ class Inventory:
         try:
             self.df.to_excel(self.filename, index=False)
         except PermissionError:
-            return f"Failed to add bulk data. Please close the Excel file that is currently open."
+            return ["Error", f"Failed to add bulk data. Please close the Excel file that is currently open."]
 
-        return f"Data added successfully."
+        return ["Message", f"Data added successfully."]
 
     def print_list(self, pdf_file_location="."):
         """
@@ -233,10 +233,10 @@ class Inventory:
                     pdf.savefig(fig, bbox_inches='tight')
                     plt.close()
 
-            message = f"Inventory list printed successfully. File location: {pdf_file_location}, File name: {pdf_file_name}"
+            message = ["Message", f"Inventory list printed successfully. File location: {pdf_file_location}, File name: {pdf_file_name}"]
 
         except PermissionError:
-            return "Error: Permission issue. Please check if the PDF file location is accessible."
+            return ["Error", "Error: Permission issue. Please check if the PDF file location is accessible."]
         return message
 
 
@@ -347,18 +347,39 @@ class MyApp:
 
             if field.lower() == 'part name' or field.lower() == 'part no' or field.lower() == 'model':
                 try:
-                    field_input = str(window.children[field.lower() + '_entry'].get())
-                    data.append(field_input)
+                    field_input = str(window.children[field.lower() + '_entry'].get()).capitalize()
+                    # Check if the string length is within the allowed limit (50 characters)
+                    if len(field_input) <= 50:
+                        data.append(field_input)
+                    else:
+                        self.show_message("Error",
+                                          f"Invalid data length. Please enter a string with at most 50 characters for part name, part no, model.")
+                        error_occurred = True
                 except ValueError:
-                    self.show_message(f"Invalid data type. Please enter valid data types for each field.", "Error")
+                    self.show_message("Error", f"Invalid data type. Please enter valid data types for each field.")
                     error_occurred = True
 
             else:
                 try:
-                    field_input = int(window.children[field.lower() + '_entry'].get())
-                    data.append(field_input)
+                    if field.lower() == 'quantity':
+                        field_input = int(window.children[field.lower() + '_entry'].get())
+                        # Check if the numeric value is within the allowed range (<= 10000)
+                        if 0 <= field_input <= 10000:
+                            data.append(field_input)
+                        else:
+                            self.show_message("Error", f"Invalid numeric value. Please enter a number between 0 and 10000 for quantity.")
+                            error_occurred = True
+                    else:
+                        field_input = int(window.children[field.lower() + '_entry'].get())
+                        # Check if the numeric value is within the allowed range (<= 100)
+                        if 1 <= field_input <= 100:
+                            data.append(field_input)
+                        else:
+                            self.show_message("Error",
+                                              f"Invalid numeric value. Please enter a number between 1 and 100. for stock location")
+                            error_occurred = True
                 except ValueError:
-                    self.show_message(f"Invalid data type. Please enter valid data types for each field.", "Error")
+                    self.show_message("Error", f"Invalid data type. Please enter valid data types for each field.")
                     error_occurred = True
 
         if not error_occurred and all(data):
@@ -415,15 +436,18 @@ class MyApp:
             self.item_list = outlist
             self.root.destroy()
         else:
-            return f"Please select a folder"
+            return ["Message", f"Please select a folder"]
 
     def file_name_bulk(self):
         """
                 Get the file name for bulk input.
         """
         file_selected = filedialog.askopenfilename()
-        self.item_list = ["BULK", file_selected]
-        self.root.destroy()
+        if file_selected:
+            self.item_list = ["BULK", file_selected]
+            self.root.destroy()
+        else:
+            return ["Message", f"Please select a file"]
 
     def get_list(self):
         """
@@ -436,7 +460,7 @@ class MyApp:
             return self.item_list
 
     @staticmethod
-    def show_message(message, message_type):
+    def show_message(message_type, message):
         """
                 Display a message box.
 
@@ -444,7 +468,13 @@ class MyApp:
                 - message: Message to display
                 - message_type: Type of the message (Success, Error, etc.)
         """
-        messagebox.showinfo(message, message_type)
+        if message_type == "Message":
+            messagebox.showinfo(message_type, message)
+        else:
+            messagebox.showerror(message_type, message)
+
+
+
 
     def display_excel_data(self, df, height):
         """
@@ -459,10 +489,10 @@ class MyApp:
         window.title("Data Display")
         window.iconbitmap('Icon.ico')
         # set minimum window size value
-        window.minsize(1000, 2000)
+        window.minsize(1000, 500)
 
         # set maximum window size value
-        window.maxsize(1000, 2000)
+        window.maxsize(1000, 500)
 
         # Create a treeview widget for tabular display
         tree = ttk.Treeview(window, columns=list(df.columns), show="headings", height=height)

@@ -1,5 +1,5 @@
-import pandas as pd
+from tkinter import messagebox
 
-df = pd.read_excel("inventory.xlsx")
 
-print(df.dtypes)
+
+messagebox.showinfo("Error", "Message")

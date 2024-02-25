@@ -29,12 +29,12 @@
         Part Name: String
         Part No: String
         Model: String
-        Stock Location: String
-        Quantity: Integer
+        Stock Location: Integer (Between 0 and 100)
+        Quantity: Integer (Between 0 and 10000)
 
     #Edit Inventory:
         Part No: String
-        Quantity: Integer
+        Quantity: Integer (Between 0 and 10000)
 
     #Search Inventory:
         Part No: String
