@@ -25,12 +25,12 @@ class Inventory:
         self.filename = filename
         self.date_now = datetime.datetime.now()
         self.date_today = self.date_now.strftime("%d-%m-%Y %H:%M")
-        try:
-            self.df = pd.read_excel(self.filename)
-        except FileNotFoundError:
-            return "Error: The specified Excel file does not exist."
-        except PermissionError:
-            return "Error: Permission issue. Please check if the file is open."
+        # try:
+        self.df = pd.read_excel(self.filename)
+        # except FileNotFoundError:
+        #     return "Error: The specified Excel file does not exist."
+        # except PermissionError:
+        #     return "Error: Permission issue. Please check if the file is open."
 
     def get_list(self, part_no):
         """
