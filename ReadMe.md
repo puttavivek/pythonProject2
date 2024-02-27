@@ -13,17 +13,18 @@ This is a simple inventory assistant implemented in Python using the Tkinter GUI
 
 ## Installation
 1. **Clone the repository:**
+   Clone this repository to your local machine
    ```bash
    git clone https://github.com/your_username/inventory-management.git
    cd inventory-management
    ```
 
-2. **Install dependencies:**
+3. **Install dependencies:**
    ```bash
    pip install -r requirements.txt
    ```
 
-3. **Run the main application file:**
+4. **Run the main application file:**
    ```bash
    python main.py
    ```
