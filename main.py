@@ -41,6 +41,6 @@ if gui_input:
         return_str = inventory.bulk_entry(gui_input[1])
         app.show_message(return_str[0], return_str[1])
     else:
-        app.show_message("Unknown Error Occurred", "Message")
+        pass
 else:
-    app.show_message("Unknown Error Occurred", "Message")
+    pass
