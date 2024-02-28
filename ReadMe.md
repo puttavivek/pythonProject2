@@ -67,3 +67,5 @@ Select a file containing bulk inventory data (Excel format).
 - Print the inventory data to a PDF file.
 - Bulk entry of inventory data from a file.
 
+### Project Report and Video Presentation:
+For Project Report and a video presentation, visit the [Google Drive Link](https://drive.google.com/drive/folders/1cgPzpzsA_8RfVegrcG0sBfwnxp67DYZt?usp=sharing)
