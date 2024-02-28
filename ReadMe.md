@@ -51,7 +51,7 @@ When this is selected, it prompts user to enter Part No, and it fetches the deta
 ### View Inventory:
 When user selects this option, a new window is opened displaying all the excel data.
 
-### View Inventory:
+### Print Inventory:
 When this option is selected user is prompted to select the folder location and entire excel data is saved as a pdf in that location.
 
 ### Bulk Input:
