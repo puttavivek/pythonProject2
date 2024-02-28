@@ -42,3 +42,5 @@ if gui_input:
         app.show_message(return_str[0], return_str[1])
     else:
         app.show_message("Unknown Error Occurred", "Message")
+else:
+    app.show_message("Unknown Error Occurred", "Message")

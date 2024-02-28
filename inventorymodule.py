@@ -473,9 +473,6 @@ class MyApp:
         else:
             messagebox.showerror(message_type, message)
 
-
-
-
     def display_excel_data(self, df, height):
         """
                 Display Excel data in a new window.
