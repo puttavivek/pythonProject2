@@ -31,24 +31,34 @@ This is a simple inventory assistant implemented in Python using the Tkinter GUI
 
 ## User Input Details
 
-### Add Inventory:
+### Add Inventory: 
+When the user provides input, data validation happens and the input data is appended to the excel file.
 - Part Name: String
 - Part No: String
 - Model: String
 - Stock Location: Integer (Between 0 and 100)
 - Quantity: Integer (Between 1 and 10000)
 
-### Edit Inventory:
+### Edit Inventory: 
+This option is used to Update the quantity field based on the Part No and data validation happens as add inventory option.
 - Part No: String
 - Quantity: Integer (Between 1 and 10000)
 
 ### Search Inventory:
+When this is selected, it prompts user to enter Part No, and it fetches the details from the excel sheet and display it on GUI window.
 - Part No: String
 
+### View Inventory:
+When user selects this option, a new window is opened displaying all the excel data.
+
+### View Inventory:
+When this option is selected user is prompted to select the folder location and entire excel data is saved as a pdf in that location.
+
 ### Bulk Input:
+This option is selected to input bulk data into the database using excel file. This option asks user for excel file and does data validations as add inventory method and appends this data to the existing data in the excel file.
 Select a file containing bulk inventory data (Excel format).
 
-Follow the on-screen instructions to perform inventory management tasks.
+### Follow the on-screen instructions to perform inventory management tasks.
 
 ## Features:
 - Add new inventory items or update existing ones.
