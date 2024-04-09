@@ -15,7 +15,7 @@ This is a simple inventory assistant implemented in Python using the Tkinter GUI
 1. **Clone the repository:**
    Clone this repository to your local machine
    ```bash
-   git clone https://github.com/your_username/inventory-management.git
+   git clone https://github.com/puttavivek/pythonProject2
    cd inventory-management
    ```
 
